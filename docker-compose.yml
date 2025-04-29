@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  server:
+    build: ./server
+    container_name: helpdesk-server
+    ports:
+      - "5000:5000"           # Expose backend sur localhost:5000
+    volumes:
+      - ./server:/app         # Monter le dossier pour live reload
+      - db-data:/app/db       # Volume pour SQLite persistante
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=your_jwt_secret_key_here
+      - DATABASE_URL=sqlite:db/database.sqlite
+    depends_on:
+      - db
+
+  client:
+    build: ./client
+    container_name: helpdesk-client
+    ports:
+      - "5173:5173"           # Vite serveur sur localhost:5173
+    volumes:
+      - ./client:/app         # Monter le dossier pour hot reload
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - server
+
+  db:
+    image: nouchka/sqlite3:latest
+    container_name: helpdesk-sqlite
+    volumes:
+      - db-data:/data/db
+    command: ["tail", "-f", "/dev/null"] # Garde le conteneur vivant
+    # Ici on garde SQLite vivant juste pour créer un volume partagé
+
+volumes:
+  db-data:
